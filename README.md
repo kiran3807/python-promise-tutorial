@@ -28,6 +28,8 @@ on a single thread, which listens to events and executes the functions according
 
 asynchrnous programming is a good fit for IO bound operations as we are essentially run a single loop without the over head of thread creation and context switching. Not to mention the synchronisation efforts that go along with threads, like semaphores and mutexes
 
+Also asynchrnous programming is used in GUI environment
+
 asynchronous programming being event driven , heavily depends on call-backs
 
 ##Callbacks ?? :
@@ -48,3 +50,19 @@ They are a design pattern
 That allow you to write asynchronous code in a synchronous manner. instead passing functions inside functions you can simply chain the calls
 thus greatly simplyfying the logic flow of the code
 
+The implementation of promises we will be using is defer from twisted. on ubuntu do apt-get install python-twisted
+on RHEL/Centos yum install python-twisted
+
+A promise basically is a representation of unfinished work, a token that the information will be arriving in future.
+Twisted calls the object deffered object.
+
+The most important method we will be needing : addCallbacks
+
+addCallBacks basically takes two arguments success callback and failure call back.
+the function also returns a deffered object itself, so you can chain the calls and write code that feels synchronous despite its nature
+
+both success and error cal backs recieve success and failure objects as arguments, the failure object is a wrapper over the exception object in python which has deffered specicfic menthods
+
+failure is induced by throwing an exception in one of the call-backs
+
+promises basically help separate out the concerns, that is instead of writing the logic inside the callbacks at the same place, you can split the logic between different parts of the program, with the deffered object acting as the common currency 
