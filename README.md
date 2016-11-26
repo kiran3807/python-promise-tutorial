@@ -1,7 +1,77 @@
-#Why do we need promises ?
+#Why do we need promises in python ?
 
 Concurrent programming, soon or later every programmer has to do it. 
 If you run a server that serves multiple clients, or do heavy scientefic calculations, there are no two ways about it
+There are two ways to go about concurrent programming : Synchronous and Asynchronous 
+
+##Synchronous programming :
+
+Synchronous programming is where functions are blocking. In other words, if you call a function `foo` it will not relinquish control till it has completed its execution. 
+
+###How do we acheive concurrency ?
+
+Lets take a concrete example. Say we need to retreive a names, highest upvoted questions and answers of all users whose names start with k in stackoverflow
+
+This translates into 3 calls. Let the functions doing those calls be `getNames`, `getQuestions`, `getAnswers`. We can spawn three threads corresponding to the functions. Mind you the functions also have the logic to handle the data after retreival. Here the functions are still blocking, but since they are being executed in parallel threads, we acheive concurrence here 
+
+##Asynchronous programming:
+
+Here the function calls are non-blocking. That is the function does not wait to relinquish control untill its execution is complete.
+
+###How do we acheive concurrency ?
+
+Lets take the previous example. We can have a parent thread which handles the main execution. We simply spawn a worker thread for the 3 calls that we wish to make. However once the data is retreived we signal the parent thread, which then takes over the processing of the retreived data.
+
+The signalling can be done via events or setting a flag in the shared memory.
+
+Consider this :
+```python
+
+import threading as t
+
+def get_data(id):
+    
+    def __get_data(id):
+        """ Logic to retreive data from server based on the id above """
+        """ Here we set the shared memory to let the parent thread know that the task is complete"""
+        global flags
+        flags[id] = True
+        
+    my_thread = t.Thread(target=__get_data)
+    my_thread.start()
+    
+def handle_data_1():
+    """ Logic to handle the data from the first call """
+    
+def handle_data_2():
+    """ Logic to handle the data from the second call """
+    
+def handle_data_3():
+    """ Logic to handle the data from the third call """
+    
+""" Here signalling is done via flag setting in the shared memory """
+flags = [False,False,False,False]
+def boss_thread():
+    id = 0
+    while id < 3:
+         get_data(id)
+         id += 1
+        """ These are the handlers for the data retreived in the worker threads"""
+        if flags[0]:
+            handle_data_1()
+            flags[0] = False
+        if flags[1]:
+            handle_data_2()
+            flags[1] = False
+        if flags[2]:
+            handle_data_3()
+            flags[2] = False
+            
+        """ Do some processing here in the parent thread """
+    
+    
+boss_thread()
+```
 
 The most common approach to it is multi-threading.
 
