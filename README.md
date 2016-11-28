@@ -72,9 +72,44 @@ def boss_thread():
     
 boss_thread()
 ```
+Here the thread on which the async function was executed will continue running without blocking as for the potential blocking network/IO operations are offloaded to back ground threads which will carryout the operations and signal completion of their tasks by event dispatching or by setting a flag in shared memory.
 
-The most common approach to it is multi-threading.
+The result is then collected and processed in the thread running the async function
 
+###Event loops :
+Multi-threading is not the only way to do asynchronous programming though, We can also do it in a single threaded context.
+Here enter event loops. Event loops consist of two parts. An infinite loop called the reactor which listens for events and a queue caled the messaging queue, which has a list of functions that have to be executed in the current context.
+
+An async function here almost always accepts a call-back, that is a function as an argument. That function will be executed later when the async operation is done
+
+Whenever we wish to execute a async function, the function returns immediatly and the execution context dispatches the blocking code and simply waits for the result to appear. For example after sending the call to a remote url the context will wait for response to appear. Mind you since the data is on external network, in the process of arriving, the waiting here doesnt have to block execution. Meanwhile since the async function has returned further processing can continue
+
+Once the response appears an event is dispatched for the same. That causes the call-back passed to the async function to be enqueued.
+
+The messaging queue checks wether a function is executing in the current stack. If not a function is removed in the queue and executed.
+
+Here is a pseudo-sample of how the event loop might work.
+```python
+import Queue
+
+message_queue = q.Queue(10)
+def get_data(post_id,callback):
+    """ Make a call to get data from remote, we set the event dispatcher to broadcast an event when data arrives """
+    event_dispatcher.markForBroadcast(callback)
+
+def event_loop():
+    while True:
+       if event_dispatcher.event is not None :
+          message_queue.put(event_dispatcher.event.callback)
+          
+       if not message_queue.empty() :
+          callback = message_queue.get()
+          callback()
+                
+event_loop()
+```
+
+Whenever we execute any async function, that function will be put in the queue by the execution context
 ##Multi-threading :
 
 Multi-threading allows you to have parallel flow of execution either by time-slicing or by executing on multiple cores
