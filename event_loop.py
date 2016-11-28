@@ -1,62 +1,89 @@
-import urllib2 as u
+import socket as s
 import Queue as q
-import json
 import time
 
-def get_data(index):
-    global dataArr
-    time.sleep(2)
-    site= "http://jsonplaceholder.typicode.com/posts/" + str(index+1)
-    hdr = {'User-Agent': 'Mozilla/5.0'}
-    req = u.Request(site,headers=hdr)
-    raw_data = u.urlopen(req).read()
-    dataArr[index] = json.loads(raw_data)['title']
-    print "data received -- " + str(index)
-
-def call_back_2(callback):
-    def __internal():
-        get_data(1)
-        callback(None)
-        
-    global queue
-    queue.put(__internal)
-        
-def call_back_3(callback):
-    def __internal():
-        get_data(2)
-        
-    global queue
-    queue.put(__internal)
+def get_data(post_id,callback):
+    global temp_store, sock_obj
     
-def call_back_1(callback):
-    def __internal():
-        get_data(0)
-        callback(call_back_3)
+    sock = s.socket(s.AF_INET,s.SOCK_STREAM)
+    host = 'jsonplaceholder.typicode.com'
+    port = 80
+    """ Must leave an empty space below the message, its part of the http spec """
+    message = """GET /users/{0} HTTP/1.1
+Host: jsonplaceholder.typicode.com
+Accept: */*
+
+""".format(post_id)
+    remote_ip = s.gethostbyname(host)
+    sock.connect((remote_ip,port))
+
+    sock.send(message)
+    sock.setblocking(0)
+    temp_store[callback.__name__] = [sock,callback,'']
+
+""" These are the call backs we will be passing to get_data function """    
+def call_back_2(res):
+    print "call back 2"
         
-    global queue
-    queue.put(__internal)
-
-def should_stop(dataArr):
-    value = False
-    for v in dataArr:
-        if(v is None):
-            value = True
-            break
-    return value
+def call_back_3(res):
+    print "call back 3"
     
-""" Here we use static memory location dataArr in liue of event emmiting systems found in real life systems like twisted """
-queue = q.Queue(10)
-dataArr = [None,None,None]
+def call_back_1(res):
+    print "call back 1"
+    
+""" this checks if the entire json payload has arrived or not """    
+def check_end(message):
+    that = False
+    if message[-1] == '}' and message[-2] != ' ':
+        that = True
+    return that
 
-def event_loop():
-    global dataArr
-    print "processing"
-    call_back_1(call_back_2)
-    while should_stop(dataArr) :
-        #print dataArr 
+""" This is an example of a function we may execute in an async context """    
+def main():
+    count = 0
+    print "processing starts"
+    
+    get_data(1,call_back_1)
+    
+    while count < 2 :
+        time.sleep(1)
         print "processing"
-        inner = queue.get()
-        inner()
+        count += 1
+        
+    get_data(2,call_back_2)
+    
+    count = 0
+    while count < 3 :
+        time.sleep(1)
+        print "processing"
+        count += 1
+        
+    get_data(3,call_back_3)
+    
+queue = q.Queue(10)
+sock_arr = []
+temp_store = {}
+""" Initialising the queue. """
+queue.put((main,None))
+def event_loop():
+    while True:
+        """ Here the non-blocking socket throws an exception if data has not been completely transfered and we try reading from it """
+        try:
+            for key in temp_store:
+                sock = temp_store[key][0]
+                temp_store[key][2] += sock.recv(6553)
+                if check_end(temp_store[key][2]):
+                """ Once the data has been fetched we push the call back into the message queue """
+                    queue.put( (temp_store[key][1], temp_store[key][2] ) )
+                    del temp_store[key]   
+        except :
+            pass
+        if not queue.empty():
+            function,arg= queue.get()
+            if arg is None:
+                function()
+            else :
+                function(arg)
                 
 event_loop()
             
