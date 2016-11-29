@@ -50,12 +50,14 @@ def handle_data_3():
     """ Logic to handle the data from the third call """
     
 """ Here signalling is done via flag setting in the shared memory """
-flags = [False,False,False,False]
+flags = [None,None,None,None]
 def boss_thread():
     id = 0
-    while id < 3:
-         get_data(id)
-         id += 1
+    while True:
+         if id < 4
+            id += 1
+            get_data(id)
+            
         """ These are the handlers for the data retreived in the worker threads"""
         if flags[0]:
             handle_data_1()
@@ -99,6 +101,7 @@ def get_data(post_id,callback):
 
 def event_loop():
     while True:
+    """ Here the event_dispatcher.event is populated if there is an event, other wise it is generally None"""
        if event_dispatcher.event is not None :
           message_queue.put(event_dispatcher.event.callback)
           
@@ -108,8 +111,70 @@ def event_loop():
                 
 event_loop()
 ```
+##The power of call-backs :
+We have seen so far that we can do asynchronous programming in both contexts, single(event loops) and multi-threaded. Lets look at the mult-threaded asynchronous programming again. 
+```python
+def boss_thread():
+    id = 0
+    while id < 3:
+         if id < 4
+            id += 1
+            get_data(id)
+            
+        """ These are the handlers for the data retreived in the worker threads"""
+        if flags[0]:
+            handle_data_1()
+            flags[0] = False
+        if flags[1]:
+            handle_data_2()
+            flags[1] = False
+        if flags[2]:
+            handle_data_3()
+            flags[2] = False
+            
+        """ Do some processing here in the parent thread """
+    
+    
+boss_thread()
+```
+Here we see that we spawn a new thread for every `get_data` function call. However we cannot be sure of the order of executions of the `handle_data` functions above. It depends on which thread gets its data resolved first. So the order may be : `handle_data_2`, `handle_data_3` and `handle_data_1` depending on network/IO latency.
 
-Whenever we execute any async function, that function will be put in the queue by the execution context
+So how do we ensure the sequence of execution here, That is how do we ensure the call order is like this : `handle_data_1`, `handle_data_2` and `handle_data_3`.
+
+The first solution that comes to the mind is that we use extra conditions to make sure the functions are executed in the correct order. So we might do something like this  :
+
+```python
+def boss_thread():
+    id = 0
+    while id < 3:
+         if id < 4 and not flag[id]
+            id += 1
+            get_data(id)
+            
+        """ These are the handlers for the data retreived in the worker threads"""
+        if flags[0]:
+            handle_data_1()
+            flags[0] = False
+        if flags[1]:
+            handle_data_2()
+            flags[1] = False
+        if flags[2]:
+            handle_data_3()
+            flags[2] = False
+            
+        """ Do some processing here in the parent thread """
+    
+    
+boss_thread()
+```
+Focus on the condition here :
+```python
+if id < 4 and not flag[id]
+    id += 1
+    get_data(id)
+```
+
+
 ##Multi-threading :
 
 Multi-threading allows you to have parallel flow of execution either by time-slicing or by executing on multiple cores
