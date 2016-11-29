@@ -2,6 +2,8 @@ import urllib2 as u
 import json
 import time
 import threading as t
+import random
+
 
 def get_data(post_id,data):
     
@@ -10,7 +12,7 @@ def get_data(post_id,data):
         hdr = {'User-Agent': 'Mozilla/5.0'}
         req = u.Request(site,headers=hdr)
         raw_data = u.urlopen(req).read()
-        time.sleep(4)
+        time.sleep(random.randint(1,10))
         print "data received -- " + str(post_id)
         """ Setting the flag and populating the data at the same time """
         data[post_id] = json.loads(raw_data)['title']
@@ -27,15 +29,17 @@ def handle_data_2():
 def handle_data_3():
     print "3 has been handled"
     
-
+        
 def boss_thread():
     """ We use data dict as a collection of flag as it is shared among the threads """
     data = {}
     current = 0
-    while len(data) < 3:
-        if len(data) == current:
-            get_data(current+1, data)
+    while True:
+        
+        if current < 3:
             current += 1
+            get_data(current, data)
+        
         time.sleep(2)
         """ These are the handlers for the data retreived in the worker threads"""
         if 1 in data and data[1]:
@@ -44,9 +48,9 @@ def boss_thread():
         if 2 in data and data[2]:
             handle_data_2()
             data[2] = False
-        if 3 in data and data[2]:
+        if 3 in data and data[3]:
             handle_data_3()
-            data[2] = False
+            data[3] = False
             
         print "processing"
     
