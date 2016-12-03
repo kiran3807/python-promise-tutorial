@@ -1,16 +1,16 @@
 #Why do we need promises in python ?
 
 Concurrent programming, soon or later every programmer has to do it. 
-If you run a server that serves multiple clients, or do heavy scientefic calculations, there are no two ways about it
-There are two ways to go about concurrent programming : Synchronous and Asynchronous 
+If you run a server that serves multiple clients, or do heavy scientific calculations, there is no escaping them
+Currently there are two ways to go about it : Synchronous and Asynchronous programming.
 
 ##Synchronous programming :
 
-Synchronous programming is where functions are blocking. In other words, if you call a function `foo` it will not relinquish control till it has completed its execution. 
+Synchronous programming is where the functions are blocking. In other words, if you call a function `foo` it will not relinquish control till it has completed its execution. 
 
 ###How do we acheive concurrency ?
 
-Lets take a concrete example. Say we need to retreive a names, highest upvoted questions and answers of all users whose names start with k in stackoverflow
+Lets take a concrete example. Say we need to retreive a names, highest upvoted questions and answers of all users whose names start with *k* in stackoverflow
 
 This translates into 3 calls. Let the functions doing those calls be `getNames`, `getQuestions`, `getAnswers`. We can spawn three threads corresponding to the functions. Mind you the functions also have the logic to handle the data after retreival. Here the functions are still blocking, but since they are being executed in parallel threads, we acheive concurrence here 
 
