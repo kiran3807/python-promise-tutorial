@@ -8,7 +8,7 @@ Currently there are two ways to go about it : Synchronous and Asynchronous progr
 
 Synchronous programming is where the functions are blocking. In other words, if you call a function `foo` it will not relinquish control till it has completed its execution. 
 
-###How do we acheive concurrency ?
+###Concurrency using mult-threading :
 
 Lets take a concrete example. Say we need to retreive a names, highest upvoted questions and answers of all users whose names start with *k* in stackoverflow
 
@@ -18,7 +18,7 @@ This translates into 3 calls. Let the functions doing those calls be `getNames`,
 
 Here the function calls are non-blocking. That is the function does not wait to relinquish control untill its execution is complete.
 
-###How do we acheive concurrency ?
+###Concurrency using multi-threading :
 
 Lets take the previous example. We can have a parent thread which handles the main execution. We simply spawn a worker thread for the 3 calls that we wish to make. However once the data is retreived we signal the parent thread, which then takes over the processing of the retreived data.
 
@@ -76,9 +76,43 @@ boss_thread()
 ```
 Here the thread on which the async function was executed will continue running without blocking as for the potential blocking network/IO operations are offloaded to back ground threads which will carryout the operations and signal completion of their tasks by event dispatching or by setting a flag in shared memory.
 
-The result is then collected and processed in the thread running the async function
+The result is then collected and processed in the thread running the async function.
 
-###The power of call-backs :
+###Concurrency using event loops :
+Multi-threading is not the only way to do asynchronous programming though, We can also do it in a single threaded context.
+Enter the event loops. Event loops consist of two parts. An infinite loop called the reactor which listens for events and a queue caled the messaging queue, which has a list of functions that have to be executed in the current context.
+
+An async function here almost always accepts a call-back, that is a function as an argument. That function will be executed later when the async operation is done
+
+Whenever we wish to execute a async function, the function returns immediatly and the execution context dispatches the blocking code and simply waits for the result to appear. For example after sending the call to a remote url the context will wait for response to appear. Mind you since the data is on external network, in the process of arriving, the waiting here doesnt have to block execution. Meanwhile since the async function has returned further processing can continue
+
+Once the response appears an event is dispatched for the same. That causes the call-back passed to the async function to be enqueued.
+
+The messaging queue checks wether a function is executing in the current stack. If not a function is removed in the queue and executed.
+
+Here is a pseudo-sample of how the event loop might work.
+```python
+import Queue
+
+message_queue = q.Queue(10)
+def get_data(post_id,callback):
+    """ Make a call to get data from remote, we set the event dispatcher to broadcast an event when data arrives """
+    event_dispatcher.markForBroadcast(callback)
+
+def event_loop():
+    while True:
+    """ Here the event_dispatcher.event is populated if there is an event, other wise it is generally None"""
+       if event_dispatcher.event is not None :
+          message_queue.put(event_dispatcher.event.callback)
+          
+       if not message_queue.empty() :
+          callback = message_queue.get()
+          callback()
+                
+event_loop()
+```
+
+##The power of call-backs :
 
 ####Synchronisation without call-backs :
 
@@ -222,39 +256,7 @@ Here the flow of logic is much simplified. We make our asynchronous calls in the
 
 `async_function_1` is passed `call_back_1` as call-back. Inside `call_back_1`, we define another call-backm `call_back_2`. We call `async_function_2` inside the same function and pass `call_back_2` as a call-back. 
 
-###Event loops :
-Multi-threading is not the only way to do asynchronous programming though, We can also do it in a single threaded context.
-Here enter event loops. Event loops consist of two parts. An infinite loop called the reactor which listens for events and a queue caled the messaging queue, which has a list of functions that have to be executed in the current context.
 
-An async function here almost always accepts a call-back, that is a function as an argument. That function will be executed later when the async operation is done
-
-Whenever we wish to execute a async function, the function returns immediatly and the execution context dispatches the blocking code and simply waits for the result to appear. For example after sending the call to a remote url the context will wait for response to appear. Mind you since the data is on external network, in the process of arriving, the waiting here doesnt have to block execution. Meanwhile since the async function has returned further processing can continue
-
-Once the response appears an event is dispatched for the same. That causes the call-back passed to the async function to be enqueued.
-
-The messaging queue checks wether a function is executing in the current stack. If not a function is removed in the queue and executed.
-
-Here is a pseudo-sample of how the event loop might work.
-```python
-import Queue
-
-message_queue = q.Queue(10)
-def get_data(post_id,callback):
-    """ Make a call to get data from remote, we set the event dispatcher to broadcast an event when data arrives """
-    event_dispatcher.markForBroadcast(callback)
-
-def event_loop():
-    while True:
-    """ Here the event_dispatcher.event is populated if there is an event, other wise it is generally None"""
-       if event_dispatcher.event is not None :
-          message_queue.put(event_dispatcher.event.callback)
-          
-       if not message_queue.empty() :
-          callback = message_queue.get()
-          callback()
-                
-event_loop()
-```
 ##The problem with call-backs :
 
 As we have seen above call-backs are a great way to bring about order among asynchronous functions, wether we use multi-threading or an event loop.
