@@ -169,11 +169,17 @@ boss_thread()
 ```
 Focus on the condition here :
 ```python
-if id < 4 and not flag[id]
+if id < 4 and flag[id] == False
     id += 1
     get_data(id)
 ```
+Here we only let the next network call be made when the handler function corresponding to the call previously made is complete
+The flag is present in the list `flags`. each call made has an `id` associating with it, starting with **0**. For example the first call made will have id **0**. 
 
+The flag is initialised to `None`. when the data is retreived it is set to `True`. In the loop above we check wether any of the flags has been set to True. If so we simply execute the handler function for the data retreived. For example for call with `id` 0 the function executed will be `handle_data_0`. 
+
+Once the handler function is executed, to prevent further execution of the handler in the loop we set the flag to `False`.
+So flag being set to `False` is an indication that the corresponding handler has been executed
 
 ##Multi-threading :
 
