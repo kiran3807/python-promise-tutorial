@@ -2,6 +2,7 @@ import urllib2 as u
 import json
 import time
 import threading as t
+import random
 
 def get_data(post_id,data):
     
@@ -10,7 +11,7 @@ def get_data(post_id,data):
         hdr = {'User-Agent': 'Mozilla/5.0'}
         req = u.Request(site,headers=hdr)
         raw_data = u.urlopen(req).read()
-        time.sleep(4)
+        time.sleep(random.randint(1,10))
         print "data received -- " + str(post_id)
         """ Setting the flag and populating the data at the same time """
         data[post_id] = json.loads(raw_data)['title']

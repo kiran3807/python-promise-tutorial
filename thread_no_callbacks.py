@@ -12,7 +12,9 @@ def get_data(post_id,data):
         hdr = {'User-Agent': 'Mozilla/5.0'}
         req = u.Request(site,headers=hdr)
         raw_data = u.urlopen(req).read()
+        """ This is to simulate delays different calls may induce as network latency isint the same for all """
         time.sleep(random.randint(1,10))
+        
         print "data received -- " + str(post_id)
         """ Setting the flag and populating the data at the same time """
         data[post_id] = json.loads(raw_data)['title']
@@ -31,7 +33,7 @@ def handle_data_3():
     
         
 def boss_thread():
-    """ We use data dict as a collection of flag as it is shared among the threads """
+    """ We use data dict as a collection of flags as it is shared among the threads """
     data = {}
     current = 0
     while True:
