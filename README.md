@@ -8,7 +8,7 @@ Currently there are two ways to go about it : Synchronous and Asynchronous progr
 
 Synchronous programming is where the functions are blocking. In other words, if you call a function `foo` it will not relinquish control till it has completed its execution. 
 
-###Concurrency using mult-threading :
+###Concurrency using multi-threading :
 
 Lets take a concrete example. Say we need to retreive a names, highest upvoted questions and answers of all users whose names start with *k* in stackoverflow
 
@@ -294,56 +294,26 @@ async_function(callback_1)
 ```
 The code above goes side-ways faster than it moves further.
 
-##Multi-threading :
+##Promises to the rescue :
 
-Multi-threading allows you to have parallel flow of execution either by time-slicing or by executing on multiple cores
-Operation that we perform are usually either processor bound or IO bound.
+The Promise is a design pattern
+That allow you to write asynchronous code in a "synchronous" manner. instead passing callbacks around you can simply chain the calls thus greatly simplyfying the logic flow of the code.
 
-IO bound operation spend relatively large time waiting for response, doing nothing.
+A promise basically is a representation of unfinished work, a token that the information will be arriving in future.
+The implementation of promises we will be using in the examples is `defer` from twisted.
 
-##The Global interpretor lock :
+Here is a language agnostic example of how promises behave :
 
-python, although spawns kernel threads, but at the level of the language interpretor can only run a single python thread at a time
-the implication being even in a multi-core system true parallel execution is not possible in python systems. Unless we spawn sub-processes that is
+"some code here"
 
-##Where are python threads usefull ?
+###Note : There is a subtle difference between defer object in twisted and Promise object that is actually described in the A+ standard. Defer contains the 
 
-They are generally usefull for threads which are IO bound as python can schedule and switch to other threads when the IO thread is waiting
 
-##Enter Asynchronous programming :
-
-This is another paradigm for concurrent programming, it is generally described as being event-driven. that is we have an event loop
-on a single thread, which listens to events and executes the functions accordingly. Most famous example here would be node.js
-
-asynchrnous programming is a good fit for IO bound operations as we are essentially run a single loop without the over head of thread creation and context switching. Not to mention the synchronisation efforts that go along with threads, like semaphores and mutexes
-
-Also asynchrnous programming is used in GUI environment
-
-asynchronous programming being event driven , heavily depends on call-backs
-
-##Callbacks ?? :
-
-A type of inversion of control, callbacks are basically higher-order functions, fancy term for functions that can be passed to other functions as arguments
-
-programming using callbacks for event handlers requires a change of perspective but is pretty cool once you get used to it
-
-However callbacks present us with a problem, say we want to execute blocks of code synchronously , one after another.
-
-For example , say we want to retreive the id of an employee first and then make a call using that id to get his details
-
-things can are never this simple and real life and the situations leads to a phenomenon called call-back-hell. Here enter promises
-
-##Promises :
-
-They are a design pattern
-That allow you to write asynchronous code in a synchronous manner. instead passing functions inside functions you can simply chain the calls
-thus greatly simplyfying the logic flow of the code
-
+Twisted calls the object deffered object.
 The implementation of promises we will be using is defer from twisted. on ubuntu do apt-get install python-twisted
 on RHEL/Centos yum install python-twisted
 
-A promise basically is a representation of unfinished work, a token that the information will be arriving in future.
-Twisted calls the object deffered object.
+write about how prmise help you in decoupling the interfaces...
 
 The most important method we will be needing : addCallbacks
 
