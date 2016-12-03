@@ -112,7 +112,10 @@ def event_loop():
 event_loop()
 ```
 ##The power of call-backs :
-We have seen so far that we can do asynchronous programming in both contexts, single(event loops) and multi-threaded. Lets look at the mult-threaded asynchronous programming again. 
+
+###Synchronisation without call-backs :
+
+We have seen so far that we can do asynchronous programming in both contexts, single(event loops) and multi-threaded. Lets look at asynchronous programming in the context of multi-threading again. 
 ```python
 def boss_thread():
     id = 0
@@ -176,10 +179,81 @@ if id < 4 and flag[id] == False
 Here we only let the next network call be made when the handler function corresponding to the call previously made is complete
 The flag is present in the list `flags`. each call made has an `id` associating with it, starting with **0**. For example the first call made will have id **0**. 
 
-The flag is initialised to `None`. when the data is retreived it is set to `True`. In the loop above we check wether any of the flags has been set to True. If so we simply execute the handler function for the data retreived. For example for call with `id` 0 the function executed will be `handle_data_0`. 
+The flag is initialised to `None`. when the data is retreived it is set to `True`. In the loop above we check wether any of the flags has been set to `True`. If so we simply execute the handler function for the data retreived. For example for call with `id` **0** the function executed will be `handle_data_0`. 
 
 Once the handler function is executed, to prevent further execution of the handler in the loop we set the flag to `False`.
-So flag being set to `False` is an indication that the corresponding handler has been executed
+So flag being set to `False` is an indication that the corresponding handler has been executed.
+
+###Can we do better ?
+
+As you can see we are using multiple conditionals to synchronise the code. This can get messy quickly. Not to mention here we are using only one function to do the asynchronous work. Real life is never that simple.
+
+Luckily the call-backs can make our life simple :
+
+```python
+class Observer(object):
+
+    def __init__(self):
+        self.callback_list = []
+        
+    def register(self,callback):
+        """ This functions registers the functions passed as arguments as call-backs"""
+        
+    def trigger(self, current_id):
+        """ This function executes the registered callbacks corresponding to id passed in argument """
+            
+        
+def get_data(post_id):
+    
+    global observer
+    def __get_data():
+        """ code to retreves the data corresponding to post_id in the arguments """
+        
+        """ This triggers the observer and causes all the callbacks associated with post_id to be executed """
+        observer.trigger(post_id) 
+        
+    my_thread = t.Thread(target=__get_data)
+    my_thread.start()
+
+  
+def async_function_1(callback):
+    global observer
+    get_data(1)
+    if callback is not None:
+        observer.register(callback,1)
+        
+def async_function_2(callback):
+    global observer
+    get_data(2)
+    if callback is not None:
+        observer.register(callback,2)
+              
+def driver():
+
+    def call_back_1(res):
+        """ process the data retreived from call corresponding to id 0 """
+        
+        def call_back_2(res):
+             """ process the data retreived from call corresponding to id 1 """
+            
+        async_function_2(call_back_2)
+        
+    async_function_1(call_back_1)
+      
+def boss_thread():
+  
+    print "processing"
+    driver()
+    some_other_processing()
+    
+    
+
+observer = Observer()
+boss_thread()
+```
+Here the flow of logic is much simplified. We make our asynchronous calls in the function `driver`. The async functions here are (suprise suprise) `async_function_1` and `async_function_2`. we pass them call-backs which are to process the result of the asynchronous operation they do. it could be a network call or a Disk read. Thus the call-back will be executed *after* async work is done
+
+`async_function_1` is passed `call_back_1` as call-back. Inside `call_back_1`, we define another call-backm `call_back_2`. We call `async_function_2` inside the same function and pass `call_back_2` as a call-back. 
 
 ##Multi-threading :
 
