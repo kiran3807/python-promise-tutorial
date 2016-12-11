@@ -299,21 +299,45 @@ The code above goes side-ways faster than it moves further.
 The Promise is a design pattern
 That allow you to write asynchronous code in a "synchronous" manner. instead passing callbacks around you can simply chain the calls thus greatly simplyfying the logic flow of the code.
 
+Here is a language agnostic example of how promises work :
+```
+promise = returnsPromise()
+
+success() {
+  /* Does some thing when async operation resolves successfully */
+  anotherPromise = returnsAnotherPromise()
+  return anotherPromise
+}
+
+failure() {
+    /* on failure of the async operation */
+}
+
+anotherSuccess() {
+    /* do something on success */
+}
+anotherFailure() {
+    /* handle failure */
+}
+promise.then(success, failure).then(anotherSuccess, anotherFailure)
+```
 A promise basically is a representation of unfinished work, a token that the information will be arriving in future.
+A promise could be in one of the three states :
+
+* pending : The asynchronous operation is still running
+* resolved : The asynchronous has completed successfully
+* rejected : The asynchronous operation is complete but is unsuccessfull, probably some error/exception was thrown
+
 The implementation of promises we will be using in the examples is `defer` from twisted.
 
-Here is a language agnostic example of how promises behave :
+**Note : There is a subtle difference between defer object in twisted and Promise object that is actually described in the A+ standard. Defer can set its set state as *resolved* or *rejected*. It also offers us functions to which we can pass our success and failure call-backs. **
 
-"some code here"
+**Promises objects only offer methods where we can pass our success and failure call-backs.
+Promise objects cannot set their own state as *resolved* and *rejected* **
 
-###Note : There is a subtle difference between defer object in twisted and Promise object that is actually described in the A+ standard. Defer contains the 
+Promises basically help us manage call-back hell and decouple the code. It helps us pass the handlers for success and faliures at the place where we return the promise object. Thus we are not forced to pass it at the place where the asynchronous function was called, thus acheiving separation of concerns.
 
-
-Twisted calls the object deffered object.
-The implementation of promises we will be using is defer from twisted. on ubuntu do apt-get install python-twisted
-on RHEL/Centos yum install python-twisted
-
-write about how prmise help you in decoupling the interfaces...
+To install twisted on ubuntu do apt-get install python-twisted. on RHEL/Centos yum install python-twisted
 
 The most important method we will be needing : addCallbacks
 
