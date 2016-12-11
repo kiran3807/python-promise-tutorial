@@ -297,26 +297,26 @@ The code above goes side-ways faster than it moves further.
 ##Promises to the rescue :
 
 The Promise is a design pattern
-That allow you to write asynchronous code in a "synchronous" manner. instead passing callbacks around you can simply chain the calls thus greatly simplyfying the logic flow of the code.
+that allow you to write asynchronous code in a "synchronous" manner. instead passing callbacks around you can simply chain the calls thus greatly simplyfying the logic flow of the code.
 
 Here is a language agnostic example of how promises work :
 ```
 promise = returnsPromise()
 
-success() {
+success(asyncResult) {
   /* Does some thing when async operation resolves successfully */
-  anotherPromise = returnsAnotherPromise()
-  return anotherPromise
+  result = someOtherAsyncFunction()
+  return result
 }
 
-failure() {
+failure(error) {
     /* on failure of the async operation */
 }
 
-anotherSuccess() {
+anotherSuccess(asyncResult) {
     /* do something on success */
 }
-anotherFailure() {
+anotherFailure(asynResult) {
     /* handle failure */
 }
 promise.then(success, failure).then(anotherSuccess, anotherFailure)
@@ -328,12 +328,20 @@ A promise could be in one of the three states :
 * resolved : The asynchronous has completed successfully
 * rejected : The asynchronous operation is complete but is unsuccessfull, probably some error/exception was thrown
 
+The `then` method is where we pass the success and error/failure call-backs. When the async operation in `returnPromise` method is succesfull, then the success call-back passed in `then` method is called. When the async function `someOtherAsyncFunction` in the `success` call-back is successfull, then the `anotherSuccess` call-back is called.
+
+Here we observe that we have been able to chain the calls. That is because the `then` method return a promise on the execution of both success and failure call-back. The result of both success and failure call-backs is wrapped in a promise and is passed as an argument to the call-backs to the subsequent `then` method. 
+
+One must note the fact that in the call-back chain , even of one of the call-backs fail then the failure call-backs of all the chained promises will execute.
+
+For example if `returnsPromise` method has failed both `failure` and `anotherFailure` would have been executed. If `someOtherAsyncFunction` had failed, then only `anotherFailure` would be executed
+
 The implementation of promises we will be using in the examples is `defer` from twisted.
 
-**Note : There is a subtle difference between defer object in twisted and Promise object that is actually described in the A+ standard. Defer can set its set state as *resolved* or *rejected*. It also offers us functions to which we can pass our success and failure call-backs. **
+**Note : There is a subtle difference between defer object in twisted and Promise object that is actually described in the *Promises A+* standard. Defer can set its set state as *resolved* or *rejected*. It also offers us functions to which we can pass in our success and failure call-backs.**
 
 **Promises objects only offer methods where we can pass our success and failure call-backs.
-Promise objects cannot set their own state as *resolved* and *rejected* **
+Promise objects cannot set their own state as *resolved* and *rejected*.**
 
 Promises basically help us manage call-back hell and decouple the code. It helps us pass the handlers for success and faliures at the place where we return the promise object. Thus we are not forced to pass it at the place where the asynchronous function was called, thus acheiving separation of concerns.
 
