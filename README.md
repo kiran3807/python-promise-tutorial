@@ -330,11 +330,31 @@ A promise could be in one of the three states :
 
 The `then` method is where we pass the success and error/failure call-backs. When the async operation in `returnPromise` method is succesfull, then the success call-back passed in `then` method is called. When the async function `someOtherAsyncFunction` in the `success` call-back is successfull, then the `anotherSuccess` call-back is called.
 
-Here we observe that we have been able to chain the calls. That is because the `then` method return a promise on the execution of both success and failure call-back. The result of both success and failure call-backs is wrapped in a promise and is passed as an argument to the call-backs to the subsequent `then` method. 
+Here we observe that we have been able to chain the calls. That is because the `then` method return a promise on the execution of both success and failure call-back. The result of both success and failure call-backs is wrapped in a promise and is passed as an argument to the call-backs to the subsequent `then` method. The code above is actually equivalent to :
 
-One must note the fact that in the call-back chain , even of one of the call-backs fail then the failure call-backs of all the chained promises will execute.
+```
+promise = returnsPromise()
 
-For example if `returnsPromise` method has failed both `failure` and `anotherFailure` would have been executed. If `someOtherAsyncFunction` had failed, then only `anotherFailure` would be executed
+success(asyncResult) {
+  /* Does some thing when async operation resolves successfully */
+  result = someOtherAsyncFunction()
+  return result
+}
+
+failure(error) {
+    /* on failure of the async operation */
+}
+
+anotherSuccess(asyncResult) {
+    /* do something on success */
+}
+anotherFailure(asynResult) {
+    /* handle failure */
+}
+
+another_promise = promise.then(success, failure).
+another_promise.then(anotherSuccess, anotherFailure)
+```
 
 The implementation of promises we will be using in the examples is `defer` from twisted.
 
@@ -343,17 +363,80 @@ The implementation of promises we will be using in the examples is `defer` from 
 **Promises objects only offer methods where we can pass our success and failure call-backs.
 Promise objects cannot set their own state as *resolved* and *rejected*.**
 
+To install `twisted` on ubuntu do `apt-get install python-twisted`. on RHEL/Centos `yum install python-twisted`.
+
 Promises basically help us manage call-back hell and decouple the code. It helps us pass the handlers for success and faliures at the place where we return the promise object. Thus we are not forced to pass it at the place where the asynchronous function was called, thus acheiving separation of concerns.
 
-To install twisted on ubuntu do apt-get install python-twisted. on RHEL/Centos yum install python-twisted
+As we have seen the basic premise of the promise is to provide a function that accepts success and failure call-backs.
+the `defer` object provides us with the just the method : `addCallBacks`
 
-The most important method we will be needing : addCallbacks
+`addCallBacks` takes two arguments. A success and a failure callbacks. It returns the same `defer` object. thus we can utilise chaining here. Here is the previous example using the `defer` :
 
-addCallBacks basically takes two arguments success callback and failure call back.
-the function also returns a deffered object itself, so you can chain the calls and write code that feels synchronous despite its nature
+```python
 
-both success and error cal backs recieve success and failure objects as arguments, the failure object is a wrapper over the exception object in python which has deffered specicfic menthods
+defer = returnsDefer()
 
-failure is induced by throwing an exception in one of the call-backs
+success(asyncResult) {
+  """Does some thing when async operation resolves successfully """
+  result = someOtherAsyncFunction()
+  return result
+}
 
-promises basically help separate out the concerns, that is instead of writing the logic inside the callbacks at the same place, you can split the logic between different parts of the program, with the deffered object acting as the common currency 
+failure(error) {
+    """on failure of the async operation """
+}
+
+anotherSuccess(asyncResult) {
+    """ do something on success """
+}
+anotherFailure(asynResult) {
+    """ handle failure """
+}
+
+defer.addCallBacks(success, failure).addCallBacks(anotherSuccess, anotherFailure)
+```
+Before we proceed further, lets see how `defer` objects are created. Here is how `returnsDefer` method is implemented
+
+```python
+from twisted.internet import defer, reactor
+
+def returnsDefer():
+
+    d = defer.Deffered()
+    
+    """ do some asynchronous operation here. 
+        however for demo purposes we use reactor.callLater
+        method to simulate an async operation.
+        We use a two second delay for the same
+    """
+    reactor.callLater(2,d.callback,"success")
+    return d
+```
+The `reactor.callLater` takes 3 arguments. The first argument is the time delay in seconds. The second argument is the function to be called after the delay. The third argument is the value to be passed to the function in the second argument as argument.
+
+The method `defer.callback` is used to activate the promise chain. This method sets the state of the promise/deffered object to *resolved*.
+this will cause all the success call-backs chained to be executed. The value to be passed to the success call-backs as argument is passed as argument to the method. For example the string "success" is will be passed as an argument to the success call-back attached to the deffered object.
+
+Similarly we have the method `defer.errBack`. This will set the state of the promise/deffered object as *rejected*. Thus causing all the error call-backs to execute. The method takes a `Failure` object as an argument. `Faliure` is a custom type defined by twisted library to help us handle errors in the promise chain. However if we pass an object of `Error` class or its sub-classes, it will be automatically wrapped in a `Failure` type object
+```python
+
+def first_error_handler():
+    """ Error handling code here """
+def second_error_handler():
+    """ Error handling code here """
+    
+d = defer.Deffered()
+d.addErrback(first_error_handler)
+d.addErrback(second_error_handler)
+
+d.errBack(ValueError("Activate the failure callbacks ! "))
+```
+Here both `first_error_handler` and `second_error_handler` will be executed.
+
+Also we notice an additional thing. We have used the method `defer.addErrBack`. This only adds an error call-back. The success handler is implicit, that is if the promise was resolved successfuly then the success result will simply be passed to the next success handler in the promise chain. This is analohous to the `catch` method defined in the promises A+ standard.
+
+##To sum it all up :
+
+Call-backs are one way with which we can go about asynchronous programming. They are especially usefull in a single threaded environment. It is best to go with a single threaded environment when our program is mostly IO bound.
+
+Promises are a design pattern that help us mitigate the problems with call-backs . Promises help us avoid the *pyramid of doom*, a condition where code grows sideways faster than it can progress. Promises also help us with *separation of concerns*, allowing us to write handler code where it is logically appropriate, instead of the place where the async function was called. 
