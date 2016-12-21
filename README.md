@@ -14,6 +14,8 @@ Lets take a concrete example. Say we need to retreive a names, highest upvoted q
 
 This translates into 3 calls. Let the functions doing those calls be `getNames`, `getQuestions`, `getAnswers`. We can spawn three threads corresponding to the functions. Mind you the functions also have the logic to handle the data after retreival. Here the functions are still blocking, but since they are being executed in parallel threads, we acheive concurrence here 
 
+[Here is an example demonstrating concurrent execution using multi-threading](https://github.com/kiran3807/python-promise-tutorial/blob/master/thread_no_callbacks.py) 
+
 ##Asynchronous programming:
 
 Here the function calls are non-blocking. That is the function does not wait to relinquish control untill its execution is complete.
@@ -111,6 +113,7 @@ def event_loop():
                 
 event_loop()
 ```
+[Here is a very basic implementation](https://github.com/kiran3807/python-promise-tutorial/blob/master/event_loop.py) of how a event-loop might work. It is similar in principle to the twisted `reactor` loop
 
 ##The power of call-backs :
 
@@ -185,6 +188,9 @@ The flag is initialised to `None`. when the data is retreived it is set to `True
 Once the handler function is executed, to prevent further execution of the handler in the loop we set the flag to `False`.
 So flag being set to `False` is an indication that the corresponding handler has been executed.
 
+[Here is the full code](https://github.com/kiran3807/python-promise-tutorial/blob/master/threads_no_callbacks_with_order.py) 
+demonstrating what has been described so far
+
 ####Can we do better ?
 
 As you can see we are using multiple conditionals to synchronise the code. This can get messy quickly. Not to mention here we are using only one function to do the asynchronous work. Real life is never that simple.
@@ -256,6 +262,7 @@ Here the flow of logic is much simplified. We make our asynchronous calls in the
 
 `async_function_1` is passed `call_back_1` as call-back. Inside `call_back_1`, we define another call-backm `call_back_2`. We call `async_function_2` inside the same function and pass `call_back_2` as a call-back. 
 
+[Here is a demonstration of the use of callbacks](https://github.com/kiran3807/python-promise-tutorial/blob/master/thread_callbacks.py) in a multi-threaded environment 
 
 ##The problem with call-backs :
 
@@ -329,6 +336,8 @@ A promise could be in one of the three states :
 * rejected : The asynchronous operation is complete but is unsuccessfull, probably some error/exception was thrown
 
 The `then` method is where we pass the success and error/failure call-backs. When the async operation in `returnPromise` method is succesfull, then the success call-back passed in `then` method is called. When the async function `someOtherAsyncFunction` in the `success` call-back is successfull, then the `anotherSuccess` call-back is called.
+
+[Here is the full code](https://github.com/kiran3807/python-promise-tutorial/blob/master/defer.py)
 
 Here we observe that we have been able to chain the calls. That is because the `then` method return a promise on the execution of both success and failure call-back. The result of both success and failure call-backs is wrapped in a promise and is passed as an argument to the call-backs to the subsequent `then` method. The code above is actually equivalent to :
 
@@ -440,3 +449,5 @@ Also we notice an additional thing. We have used the method `defer.addErrBack`. 
 Call-backs are one way with which we can go about asynchronous programming. They are especially usefull in a single threaded environment. It is best to go with a single threaded environment when our program is mostly IO bound.
 
 Promises are a design pattern that help us mitigate the problems with call-backs . Promises help us avoid the *pyramid of doom*, a condition where code grows sideways faster than it can progress. Promises also help us with *separation of concerns*, allowing us to write handler code where it is logically appropriate, instead of the place where the async function was called. 
+
+To further help drive home the point, [Here is an example of promises used in a multi-threaded context](https://github.com/kiran3807/python-promise-tutorial/blob/master/thread_callbacks_defer.py). This is to show that promises are not restricted to a single threaded environment and can be used wherever call-backs can be applied
