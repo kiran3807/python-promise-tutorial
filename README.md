@@ -270,7 +270,7 @@ As we have seen above call-backs are a great way to bring about order among asyn
 
 However call-backs, despite being a step-up from all those conditionals, still have the potential to get confusing. Callbacks represent something called the **Inversion of control**. Basically you give the async function the control of the call-back. You don't do the actual calling, the async function does
 
-This can lead to nesting of functions, leading to some bery confusing code. Its called the *Pyramid of doom*. For example say we need to 5 async operations in a sequence. Using call-backs the code would be something like this :
+This can lead to nesting of functions, leading to some very confusing code. Its called the *Pyramid of doom*. For example say we need to 5 async operations in a sequence. Using call-backs the code would be something like this :
 
 ```python
 def callback_1():
@@ -337,8 +337,6 @@ A promise could be in one of the three states :
 
 The `then` method is where we pass the success and error/failure call-backs. When the async operation in `returnPromise` method is succesfull, then the success call-back passed in `then` method is called. When the async function `someOtherAsyncFunction` in the `success` call-back is successfull, then the `anotherSuccess` call-back is called.
 
-[Here is the full code](https://github.com/kiran3807/python-promise-tutorial/blob/master/defer.py)
-
 Here we observe that we have been able to chain the calls. That is because the `then` method return a promise on the execution of both success and failure call-back. The result of both success and failure call-backs is wrapped in a promise and is passed as an argument to the call-backs to the subsequent `then` method. The code above is actually equivalent to :
 
 ```
@@ -404,6 +402,8 @@ anotherFailure(asynResult) {
 
 defer.addCallBacks(success, failure).addCallBacks(anotherSuccess, anotherFailure)
 ```
+[ And here is the full code](https://github.com/kiran3807/python-promise-tutorial/blob/master/defer.py)
+
 Before we proceed further, lets see how `defer` objects are created. Here is how `returnsDefer` method is implemented
 
 ```python
@@ -442,7 +442,7 @@ d.errBack(ValueError("Activate the failure callbacks ! "))
 ```
 Here both `first_error_handler` and `second_error_handler` will be executed.
 
-Also we notice an additional thing. We have used the method `defer.addErrBack`. This only adds an error call-back. The success handler is implicit, that is if the promise was resolved successfuly then the success result will simply be passed to the next success handler in the promise chain. This is analohous to the `catch` method defined in the promises A+ standard.
+Also we notice an additional thing. We have used the method `defer.addErrBack`. This only adds an error call-back. The success handler is implicit, that is if the promise was resolved successfuly then the success result will simply be passed to the next success handler in the promise chain. This is analogous to the `catch` method defined in the promises A+ standard.
 
 ##To sum it all up :
 
