@@ -8,7 +8,7 @@ SIZE = 3
 
 def get_data(post_id, data):
     def __get_data():
-        site= "http://jsonplaceholder.typicode.com/posts/" + str(post_id)
+        site= "http://jsonplaceholder.typicode.com/posts/" + str(post_id+1)
         hdr = {'User-Agent': 'Mozilla/5.0'}
         req = u.Request(site,headers=hdr)
         raw_data = u.urlopen(req).read()
@@ -19,22 +19,24 @@ def get_data(post_id, data):
     my_thread = t.Thread(target=__get_data)
     my_thread.start()
     
-def handle_data(_id):
-    print str(_id) + " has been handled"
+def handle_data(_id, data):
+    print str(_id) + " has received: " + data[_id][:100]
 
 def boss_thread():
     """ We use data dict as a collection of flag as it is shared among the threads """
-    data = {}
-    current = 0
-    while len(data) < SIZE:
-        if len(data) == current:
-            get_data(current+1, data)
-            current += 1
+    data = {} # this should be READONLY since it's accessible
+              # and modifiable in both main and child threads.
+    started_count = done_count = 0
+
+    while done_count < SIZE:
+        if started_count == done_count:
+            get_data(started_count, data)
+            started_count += 1
 
         """ These are the handlers for the data retreived in the worker threads"""
-        for _id in range(1, SIZE+1):
-            if _id in data and data[_id]:
-                handle_data(_id)
-                data[_id] = False
-    
+        for _id in range(SIZE):
+            if _id in data and _id == done_count:
+                handle_data(_id, data)
+                done_count += 1
+
 boss_thread()
