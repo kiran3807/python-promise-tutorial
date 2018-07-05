@@ -45,9 +45,9 @@ def boss_thread():
         if 2 in data and data[2]:
             handle_data_2()
             data[2] = False
-        if 3 in data and data[2]:
+        if 3 in data and data[3]:
             handle_data_3()
-            data[2] = False
+            data[3] = False
             
         print "processing"
     
